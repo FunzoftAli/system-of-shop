@@ -42,7 +42,7 @@ public class PurchaseItem : MonoBehaviour
         {
             selectedObject.isBuyyed = true;
             btnClick.previousID = selectedObject.id;
-            selectedObject._pricePanel.SetActive(false);
+            selectedObject._pricePanel.GetComponent<CanvasGroup>().alpha = 0;
             selectedObject.transform.GetChild(1).gameObject.SetActive(false);
         }
     }
