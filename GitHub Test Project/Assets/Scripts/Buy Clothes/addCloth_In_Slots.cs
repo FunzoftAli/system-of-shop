@@ -22,7 +22,10 @@ public class addCloth_In_Slots : MonoBehaviour
     private List<GameObject> GarbgeList = new List<GameObject>();
 
 
-    private List<bool> _isBuyyed = new List<bool>();
+    #region RunTimeSaveSystem
+    private List<bool> _isBuyyedClothes = new List<bool>();
+    private List<bool> _isBuyyedHairs = new List<bool>();
+    #endregion
     private void OnEnable()
     {
         switch (_Slot)
@@ -39,7 +42,11 @@ public class addCloth_In_Slots : MonoBehaviour
 
         _resetScrollView();
     }
-
+    private void _resetScrollView()
+    {
+        _rect = this.GetComponent<RectTransform>();
+        _rect.anchoredPosition = new Vector2(0, transform.position.y - 1200.0f);
+    }
     private void _FunHair()
     {
         GarbgeList.Clear();
@@ -47,11 +54,15 @@ public class addCloth_In_Slots : MonoBehaviour
         for (int i = 0; i < totalHairCount; i++)
         {
             GameObject _slot = Instantiate(PrefabSlots, parent);
-            Image _image = _slot.GetComponent<Image>();
+            Image _image = _slot.transform.GetChild(0).GetComponent<Image>();
+            btnClick _btnClick = _slot.transform.GetChild(0).gameObject.AddComponent<btnClick>();
             _image.sprite = _Body._Hair[i];
-            btnClick _btnClick = _slot.AddComponent<btnClick>();
             _btnClick.id = i;
-            GarbgeList.Add(_slot);
+            GarbgeList.Add(_btnClick.gameObject);
+            if (_isBuyyedHairs.Count != 0)
+            {
+                _btnClick.isBuyyed = _isBuyyedHairs[i];
+            }
         }
     }
 
@@ -62,36 +73,37 @@ public class addCloth_In_Slots : MonoBehaviour
         for (int i = 0; i < totalFrontCount; i++)
         {
             GameObject _slot = Instantiate(PrefabSlots, parent);
-            Image _image = _slot.GetComponent<Image>();
+            Image _image = _slot.transform.GetChild(0).GetComponent<Image>();
+            btnClick _btnClick = _slot.transform.GetChild(0).gameObject.AddComponent<btnClick>();
             _image.sprite = _Body._clothBody[i];
-            btnClick _btnClick = _slot.AddComponent<btnClick>();
             _btnClick.id = i;
-            GarbgeList.Add(_slot);
-
+            GarbgeList.Add(_btnClick.gameObject);
+            if (_isBuyyedClothes.Count != 0)
+            {
+                _btnClick.isBuyyed = _isBuyyedClothes[i];
+            }
         }
     }
-    private void _resetScrollView()
-    {
-        _rect = this.GetComponent<RectTransform>();
-        _rect.anchoredPosition = new Vector2(0, transform.position.y - 1200.0f);
-    }
+
 
     private void OnDisable()
     {
+        _isBuyyedClothes.Clear();
+        _isBuyyedHairs.Clear();
         GameObject obj = GarbgeList.Find(x => x.GetComponent<btnClick>().isSelected);
         btnClick bC = obj.GetComponent<btnClick>();
-        if (bC.isBuyyed)
-        {
-
-        }
+        if (bC.isBuyyed) { }
         else
-        {
             bC.ResetPreviousBuyyed();
-        }
-        foreach (GameObject _item in GarbgeList)
+
+        for (int i = 0; i < GarbgeList.Count; i++)
         {
-            // _isBuyyed.Add(_item.GetComponent<btnClick>().isBuyyed);
-            Destroy(_item);
+            if (_Slot == _SlotType.Armor)
+                _isBuyyedClothes.Add(GarbgeList[i].GetComponent<btnClick>().isBuyyed);
+            if (_Slot == _SlotType.Hair)
+                _isBuyyedHairs.Add(GarbgeList[i].GetComponent<btnClick>().isBuyyed);
+
+            Destroy(GarbgeList[i].transform.parent.gameObject);
         }
         GarbgeList.Clear();
     }
@@ -111,7 +123,7 @@ public class btnClick : MonoBehaviour
     private void OnEnable()
     {
         _slots = this.GetComponentInParent<addCloth_In_Slots>();
-        _pricePanel = this.transform.parent.parent.parent.parent.Find("pricePanel").gameObject;
+        _pricePanel = GameObject.Find("pricePanel").gameObject;
         btn = this.GetComponent<Button>();
         switch (_slots._Slot)
         {
@@ -131,16 +143,15 @@ public class btnClick : MonoBehaviour
             default:
                 break;
         }
-
     }
     private IEnumerator Start()
     {
         yield return new WaitForSeconds(0.0f);
-        if (id == 0)
+        if (id == 0 || isBuyyed == true)
         {
             previousID = id;
             isBuyyed = true;
-            _pricePanel.SetActive(false);
+            _pricePanel.GetComponent<CanvasGroup>().alpha = 0;
             OnClickSelect();
             transform.GetChild(1).gameObject.SetActive(false);
         }
@@ -241,9 +252,9 @@ public class btnClick : MonoBehaviour
     void OnSlotClickGetPrice()
     {
         if (isBuyyed)
-            _pricePanel.SetActive(false);
+            _pricePanel.GetComponent<CanvasGroup>().alpha = 0;
         else
-            _pricePanel.SetActive(true);
+            _pricePanel.GetComponent<CanvasGroup>().alpha = 1;
 
         Text txtPrice = _slots._btnPrice.GetComponentInChildren<Text>();
         txtPrice.text = "" + _slots._Body.GetPriceClothes(id);
@@ -252,9 +263,9 @@ public class btnClick : MonoBehaviour
     void OnSlotClickHairGetPrice()
     {
         if (isBuyyed)
-            _pricePanel.SetActive(false);
+            _pricePanel.GetComponent<CanvasGroup>().alpha = 0;
         else
-            _pricePanel.SetActive(true);
+            _pricePanel.GetComponent<CanvasGroup>().alpha = 1;
 
         Text txtPrice = _slots._btnPrice.GetComponentInChildren<Text>();
         txtPrice.text = "" + _slots._Body.GetPriceHair(id);
